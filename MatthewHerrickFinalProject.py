@@ -32,7 +32,7 @@ healingItemNames = [
     'Duct Tape', 'Graphics Card', 'Double-Sided Tape', 'Nord VPN', 'Tylenol'
 ]
 
-# Weapong Object
+# Weapon Object
 class Weapon:
     def __init__(self, name, damage):
         self.name = name
@@ -114,7 +114,7 @@ class Hero:
         else:
             # If the list is already full, ask the player if they want to replace an item.
             print("You already have 3 healing items and cannot add more. Would you like to replace an item? (y/n)")
-            answer = input()
+            answer = input_val(input())
             if answer == "y":
                 print("Which item would you like to replace?")
                 print(self.inventory['healingItems'])
@@ -174,9 +174,9 @@ class Hero:
                 print(f"{sidekick.name:}\nPower Level:{sidekick.powerLevel}\nHealth: {sidekick.currHealth}/{sidekick.maxHealth}HP\n")
 
     def level_up(self):
-        print(f"Looks like you're ready to level up!\nCurrent MaxHealth: {self.maxHealth}\nCurrent PowerLevel: {self.powerLevel}\nTotal Experince: {self.experience}\n10 Experince = PowerLevel +3\n10 experince = MaxHealth +3\n")
+        print(f"Looks like you're ready to level up!\n\nCurrent MaxHealth: {self.maxHealth}\nCurrent PowerLevel: {self.powerLevel}\nTotal Experince: {self.experience}\n\n10 Experince = PowerLevel +3\n10 experince = MaxHealth +3\n")
         print ("Would you like to level up?(y/n)")
-        choice = input()
+        choice = input_val(input())
         if choice == "y":
             print("What would you like to level up?(1 for MaxHealth, 2 for PowerLevel)")
             choice = input()
@@ -269,40 +269,11 @@ class Monster(Hero):
         print(f"Health: {self.currHealth}HP")
         print(f"Power Level: {self.powerLevel}")
 
-def print_intro():
-    print("""Ah! Glad to see you are operational, Computer but I have some pressing information.
-Recently an evil monster known as the "Dungeon King" has taken over these lands.
-Humans lack the logical prowess to take down the Dungeon King and so, we have turned to computers.
-Are you ready to take on the challenge? (y/n)""")
-
-    answer = input()
-    if answer == "y":
-        print("Good. Let's get started.")
-    else:
-        print("Sorry to disturb you then. Warning: Uncooperative systems are sent to recycling. Goodbye :D")
-        exit()
-
-def idle_menu():
-    menu_choices = ["1. Check Stats", "2. Check Inventory", "3. Hire Party Member", "4. Find Dungeon", "5. Level Up", "6. Fight Dungeon King","7. Exit Adventure(You will be sent to recycling)", "8. README"]
-    
-    print("*" * 20)
-
-    print("What would you like to do?(Enter a number)")
-    for choice in menu_choices:
-        print(choice)
-
-    print("*" * 20)
-
-def combat_menu():
-    menu_choices = ["1. Attack!", "2. Heal", "3. Enemy Stats", "4. Party Stats", "5. RUN!!!"]
-    
-    print("*" * 20)
-
-    print("What would you like to do?(Enter a number)")
-    for choice in menu_choices:
-        print(choice)
-
-    print("*" * 20)
+#Creates the random Dungeon King.
+def create_DK():
+    dkMaxHealth = random.randint(35, 50)
+    dungeonKing = Monster("Dungeon King", dkMaxHealth, random.randint(20, 35), 1000000, 1000000, dkMaxHealth)
+    return dungeonKing
 
 # Totals the gold and experience from an array of monsters
 def dungeon_loot(monsterArray):
@@ -350,7 +321,7 @@ def item_loot(itemList, hero=Hero):
 # Combat Mechanics
 def combat(value, monsterArray, gold, exp, hero=Hero, dungeonKing=Monster):
     # Primary combat function.
-    if value == '1':
+    if value == 1:
         # Targets first living monster
         for monster in monsterArray:
             if monster.is_alive():
@@ -455,12 +426,12 @@ def combat(value, monsterArray, gold, exp, hero=Hero, dungeonKing=Monster):
                 enemyTurn = False, True
 
     # Uses healing item
-    if value == '2':
+    if value == 2:
         hero.heal()
         return False, True
     
     # Check target enemy's stats
-    if value == '3':
+    if value == 3:
         # Targets first living monster
         for monster in monsterArray:
             if monster.is_alive():
@@ -473,23 +444,23 @@ def combat(value, monsterArray, gold, exp, hero=Hero, dungeonKing=Monster):
         return False, True
     
     # Check party stats
-    if value == '4':
+    if value == 4:
         hero.print_stats()
         hero.print_party()
         return False, True
 
     # Exit Combat
-    if value == '5':
+    if value == 5:
         print("You ran away!")
         hero.full_heal()
+        dungeonKing.full_heal()
         for member in hero.party.values():
             member.full_heal()
-        dungeonKing.full_heal()
         return False, False
 
 # Creates combat environments(monsters and loot)    
 def combat_loop(value, hero=Hero, dungeonKing=Monster):
-    if value == "1":
+    if value == 1:
         print("You have entered a Gilded Cave. Data suggests this will be a high risk, high reward dungeon. Be careful and goodluck!\n")
         gildedMonsters = [
             # Creates an array of Monster objects (name, currHealth, powerLevel, experience, gold)
@@ -503,12 +474,11 @@ def combat_loop(value, hero=Hero, dungeonKing=Monster):
         inDungeon = True
         while inDungeon:
             inCombat = True
-            combat_menu()
-            choice = input()
+            choice = combat_menu()
             while inCombat:
-                inCombat, inDungeon = combat(choice, gildedMonsters, totalGold, totalExperience, hero)
+                inCombat, inDungeon = combat(choice, gildedMonsters, totalGold, totalExperience, hero, dungeonKing)
     
-    if value == "2":
+    if value == 2:
         print("You have entered the Haunted Junkyard. Data suggests we might find some useful tools here but be careful and goodluck!\n")
         junkyardMonsters = [
             # Creates an array of Monster objects (name, currHealth, powerLevel, experience, gold)
@@ -529,23 +499,21 @@ def combat_loop(value, hero=Hero, dungeonKing=Monster):
         inDungeon = True
         while inDungeon:
             inCombat = True
-            combat_menu()
-            choice = input()
+            choice = combat_menu()
             while inCombat:
-                inCombat, inDungeon = combat(choice, junkyardMonsters, totalGold, totalExperience, hero)
+                inCombat, inDungeon = combat(choice, junkyardMonsters, totalGold, totalExperience, hero, dungeonKing)
         item_loot(junkyardItems, hero)
 
-    if value == "6":
+    if value == 6:
         print("You approach the Dungeon King's lair. Goodluck!\n")
         dungeonKingList = [dungeonKing]
         totalGold, totalExperience = dungeonKing.gold, dungeonKing.experience
         inDungeon = True
         while inDungeon:
             inCombat = True
-            combat_menu()
-            choice = input()
+            choice = combat_menu()
             while inCombat:
-                inCombat, inDungeon = combat(choice, dungeonKingList, totalGold, totalExperience, hero)
+                inCombat, inDungeon = combat(choice, dungeonKingList, totalGold, totalExperience, hero, dungeonKing)
 
 # Generates three sidekicks of with increasing random stats and cost
 def party_shop(hero=Hero):
@@ -570,16 +538,23 @@ def party_shop(hero=Hero):
     
     # Allows the user to choose which sidekick to add to their party
     while purchased == False:
-        print("\nWhich would you like to hire?(Enter 1, 2, 3, or 4 to exit the shop.)")
-        choice = input()
-        if choice == "1":
+        while True:
+            try:
+                choice = int(input("\nWhich would you like to hire?(Enter 1, 2, 3, or 4 to exit the shop.)"))
+            except ValueError:
+                print("Invalid input. Must enter a number between 1 and 4.")
+            else:
+                break
+        if choice == 1:
             purchased = add_party_member(hero, weakSidekick)
-        elif choice == "2":
+        elif choice == 2:
             purchased = add_party_member(hero, mediumSidekick)
-        elif choice == "3":
+        elif choice == 3:
             purchased = add_party_member(hero, strongSidekick)
-        elif choice == "4":
+        elif choice == 4:
             purchased = True
+        else:
+            print("Invalid input. Must enter a number between 1 and 4.")
 
 def add_party_member(hero=Hero, member=Sidekick):
     if member.cost > hero.inventory['gold']:
@@ -587,21 +562,26 @@ def add_party_member(hero=Hero, member=Sidekick):
                 return False
     elif hero.partySize >= 3:
         print("Your party is already full. Would you like to replace a member? (y/n)")
-        choice = input()
+        choice = input_val(input())
         if choice == "y":
-            print("Which member would you like to replace? Please enter the name of the member. Type 'quit' to exit.\n")
+            print("Which member would you like to replace? Please enter the name of the member. Type 'quit' to exit the shop.\n")
             hero.print_party()
             choice = input()
             if choice == "quit":
                 return False
+            
+            for sidekickName, sidekick in hero.party.items():
+                if choice.lower() == sidekick.name.lower():
+                    looser =sidekick.name
+                    hero.party.pop(choice, None)
+                    hero.party[member.name] = member
+                    hero.inventory['gold'] -= member.cost
+                    print(f"Goodybye {looser}!\nYou have hired {member.name}!")
+                    return True
+
             if choice not in hero.party:
-                print("That member is not in your party.")
+                print("That member is not in your party. Check your spelling and try again.")
                 return False
-            hero.party.pop(choice, None)
-            hero.party[member.name] = member
-            hero.inventory['gold'] -= member.cost
-            print(f"You have hired {member.name}!")
-            return True
     else:
         hero.party[member.name] = member
         hero.partySize += 1
@@ -611,7 +591,7 @@ def add_party_member(hero=Hero, member=Sidekick):
 
 def adventure_choice(value, hero=Hero, dungeonKing=Monster):
         # Shows user thier stats, party stats, and Dungeon King stats
-        if value == "1":
+        if value == 1:
             hero.print_stats()
             hero.print_party()
 
@@ -621,35 +601,55 @@ def adventure_choice(value, hero=Hero, dungeonKing=Monster):
             print(f"Experience: {dungeonKing.experience}XP\n")
         
         # Prints user inventory
-        if value == "2":
+        if value == 2:
             hero.print_inventory()
 
         # Takes user to party shop
-        if value == "3":
+        if value == 3:
             party_shop(hero)
         
         # Takes user to dungeons
-        if value == "4":
+        if value == 4:
             print("What kind of dungeon would you like to explore?(Enter a number)")
             print("1. Gilded Cave\n2. Haunted Junkyard")
-            dungeonType = input()
-            combat_loop(dungeonType, hero)
+            dungeonType = int(input())
+            combat_loop(dungeonType, hero, dungeonKing)
         
         # Level up
-        if value == "5":
+        if value == 5:
             hero.level_up()
 
         # Final Boss
-        if value == "6":
-            combat_loop("6", hero, dungeonKing)
+        if value == 6:
+            combat_loop(6, hero, dungeonKing)
 
         # Exit program
-        if value == "7":
+        if value == 7:
             exit()
 
         # Rules 
-        if value == "8":
+        if value == 8:
             print_rules()
+
+def input_val(answer, options = None):
+    if isinstance(answer, str) and options is None:
+        while True:
+            if answer != "y" and answer != "n":
+                print("Invalid input. Please enter 'y' or 'n'.")
+                answer = input()
+            else:
+                return answer
+    elif isinstance(answer, str) and options > 0:
+        while True:
+            print("Invalid input. Please enter a number between 1 and {options}.")
+            answer = int(input())
+    elif isinstance(answer, int) and options > 0:
+        while True:
+            if answer not in range(options) or answer == 0:
+                print(f"Invalid input. Please enter a number between 1 and {options}.")
+                answer = int(input())
+            else:
+                return answer
 
 def print_rules():
     print("\nRULES OF THE GAME:")
@@ -658,19 +658,66 @@ def print_rules():
     print("The Dungeon King:\nEvery players starts at the same level but The Dungeon King will have a random ammount of health and power. You can always check his stats by checking your own\n")
     print("Inventory:\nYou can only hold onto one weapon and three healing items at a time. Weapons permanently increase your base power level and healing items increase your current health and disappear after use\n")
 
-#Creates the dungeon king.
-dkMaxHealth = random.randint(35, 50)
-dungeonKing = Monster("Dungeon King", dkMaxHealth, random.randint(20, 35), 1000000, 1000000, dkMaxHealth)
+def combat_menu():
+    menu_choices = ["1. Attack!", "2. Heal", "3. Enemy Stats", "4. Party Stats", "5. RUN!!!"]
+    
+    print("*" * 20)
+    for choice in menu_choices:
+        print(choice)
+    print("*" * 20)
 
-print_intro()
-print("What should I call you?")
-name = input()
-newHero = Hero(name)
+    while True:
+        try:
+            value = input_val(int(input("What would you like to do?(Enter a number between 1 and 5)\n")), 6)
+        except ValueError:
+            print("Invalid input. Must enter a number between 1 and 5.")
+        else:
+            break
+
+    return int(value)
+
+def idle_menu():
+    menu_choices = ["1. Check Stats", "2. Check Inventory", "3. Hire Party Member", "4. Find Dungeon", "5. Level Up", "6. Fight Dungeon King","7. Exit Adventure(You will be sent to recycling)", "8. READ_ME"]
+    
+    print("*" * 20)
+    for choice in menu_choices:
+        print(choice)
+    print("*" * 20)
+
+    while True:
+        try:
+            value = input_val(int(input("What would you like to do?(Enter a number between 1 and 8)\n")), 9)
+        except ValueError:
+            print("Invalid input. Must enter a number between 1 and 8.")
+        else:
+            break
+
+    return value
+
+def print_intro():
+    print("""Ah! Glad to see you are operational, Computer but I have some pressing information.
+Recently an evil monster known as the "Dungeon King" has taken over these lands.
+Humans lack the logical prowess to take down the Dungeon King and so, we have turned to computers.
+Are you ready to take on the challenge? (y/n)""")
+
+    answer = input_val(input())
+    
+    if answer == "y":
+        name = input("Great! Let's get started. What should I call you?\n")
+        return name
+    else:
+        print("Sorry to disturb you then. **WARNING**: Uncooperative systems are sent to recycling. Goodbye :D")
+        exit()
+
+
+dungeonKing = create_DK()
+newHero = Hero(print_intro())
 selectedHero = newHero
 
 #Creates "god" hero for testing.
 print(f"Would you like to be a god, {newHero.name}? Used for testing. (y/n)")
-god = input()
+god = input_val(input())
+
 if god == "y":
     godHero = Hero("God", 20, 20, 20)
     godHero.inventory['gold'] = 1000
@@ -678,15 +725,14 @@ if god == "y":
     godHero.party['Flesh Sheild'] = Sidekick("Flesh Sheild", 3, 3, 3, 3)
     godHero.experience = 1000
     selectedHero = godHero
-print("\nI highly recommend reading your user manual(The rules of the game) before playing.")
+print("\nI highly recommend reading your user manual(rules of the game) before playing.")
 
 
-#Starts the adventure, only exits if the dungeon king is dead.
+#Starts the adventure, runs until the dungeon king is dead.
 adventure = True
 while adventure:
-    idle_menu()
-    idleChoice = input()
-    adventure_choice(idleChoice, selectedHero, dungeonKing,)
+    idleChoice = idle_menu()
+    adventure_choice(idleChoice, selectedHero, dungeonKing)
     if dungeonKing.is_alive() == False:
         print("You have beaten the dungeon king. Congrats!")
         adventure = False
