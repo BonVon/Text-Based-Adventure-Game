@@ -1,10 +1,19 @@
 # INF360 - Programming in Python
 # Matthew Herrick
-# Midterm Project
-# 07/07/2024
+# Final Project
+# 07/25/2024
 
+# ---------------------------------------------
+# This is a Text-Based Adventure Game. You control a "hero" going through different "dungeons" and fighting monsters.
+# Continue to earn recources to increase your hero's power and defeat the Dungeon King.
+# The programs will run until either the player or the dungeon king dies. You cannot exit and save your progress.
+# ---------------------------------------------
 
 import random
+import logging
+logging.basicConfig(filename='FinalProjectLog.txt', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s -  %(levelname)s -  %(message)s')
 
 # List of Object Names for variety
 sidekickNames = [
@@ -131,9 +140,11 @@ class Hero:
     def add_weapon(self, weapon = Weapon):
         if self.inventory['weapon'] is None:
             self.inventory['weapon'] = weapon
+            logging.debug(f"{self.name} added weapon: {weapon}")
+            print(f"{self.name} added weapon: {weapon}")
         else:
             print("You already have a weapon equipped. Would you like to switch weapons? (y/n)")
-            answer = input()
+            answer = input_val(input())
             if answer == "y":
                 self.inventory['weapon'] = weapon
             else:
@@ -275,6 +286,35 @@ def create_DK():
     dungeonKing = Monster("Dungeon King", dkMaxHealth, random.randint(20, 35), 1000000, 1000000, dkMaxHealth)
     return dungeonKing
 
+def create_God():
+    godHero = Hero("God", 20, 20, 20)
+    godHero.inventory['gold'] = 1000
+    godHero.inventory['healingItems'].append(HealingItem("Healing potion", 5))
+    godHero.party['Flesh Sheild'] = Sidekick("Flesh Sheild", 3, 3, 3, 3)
+    godHero.experience = 1000
+    return godHero
+
+def input_val(answer, options = None):
+    if isinstance(answer, str) and options is None:
+        while True:
+            if answer != "y" and answer != "n":
+                print("Invalid input. Please enter 'y' or 'n'.")
+                answer = input()
+            else:
+                return answer
+            
+    # Adds functionality for integer inputs. Dynamically checks if user input is a number within range of a gaiven set of options.
+    elif isinstance(answer, str) and options > 0:
+        while True:
+            print("Invalid input. Please enter a number between 1 and {options}.")
+            answer = int(input())
+    elif isinstance(answer, int) and options > 0:
+        while True:
+            if answer not in range(options) or answer == 0:
+                print(f"Invalid input. Please enter a number between 1 and {options}.")
+                answer = int(input())
+            else:
+                return answer
 # Totals the gold and experience from an array of monsters
 def dungeon_loot(monsterArray):
     totalGold = 0
@@ -292,19 +332,23 @@ def item_loot(itemList, hero=Hero):
             print(item)
         elif isinstance(item, HealingItem):
             print(item)
-    print("\n You can only choose one to take with you")
+    print("\nYou can only choose one to take with you")
     print("Enter the name of the item you want to take with you")
     print("Or press enter to keep your current inventory")
     choice = input()
     
+    if choice == "":
+        print("Goodbye!")
+        return
+    
     # Check user input
     rightChoice = False
     while rightChoice == False:
-        for object in itemList:
-            if object.name == choice:
+        for item in itemList:
+            if item.name == choice:
                 rightChoice = True
         if rightChoice == False:
-            print("That item is not in your inventory. Please try again")
+            print("That item is not and option. Please try again")
             choice = input()
     
     item = None
@@ -313,6 +357,7 @@ def item_loot(itemList, hero=Hero):
             item = object
     if item == "":
         return
+    
     elif isinstance(item, Weapon):
         hero.add_weapon(item)
     elif isinstance(item, HealingItem):
@@ -320,14 +365,19 @@ def item_loot(itemList, hero=Hero):
 
 # Combat Mechanics
 def combat(value, monsterArray, gold, exp, hero=Hero, dungeonKing=Monster):
-    # Primary combat function.
+    # Primary combat function. Iterates through list of monsters and targeets first living monster.
+    # Hero and party members attack first. AFer isAlive() checks, monsters attack.
     if value == 1:
         # Targets first living monster
-        for monster in monsterArray:
-            if monster.is_alive():
-                target = monster
-                break
-        
+        try:
+            for monster in monsterArray:
+                if monster.is_alive():
+                    target = monster
+                    break
+        except IndexError:
+            logging.critical("Cannot find target for combat. List is empty or target is out of range.")
+            print("Error: Cannot find target for combat. List is empty or target is out of range.")
+
         # If no monsters, target the Dungeon King
         if target == None:
             target = dungeonKing
@@ -392,6 +442,7 @@ def combat(value, monsterArray, gold, exp, hero=Hero, dungeonKing=Monster):
                     
                     if not hero.is_alive():
                         print(f"{hero.name} is dead! You lose! We will just have to find a better computer instead...")
+                        logging.debug(f"{hero.name} has been defeated. Program ended succesfully")
                         exit()
                     else:
                         return False, True
@@ -481,14 +532,14 @@ def combat_loop(value, hero=Hero, dungeonKing=Monster):
     if value == 2:
         print("You have entered the Haunted Junkyard. Data suggests we might find some useful tools here but be careful and goodluck!\n")
         junkyardMonsters = [
-            # Creates an array of Monster objects (name, currHealth, powerLevel, experience, gold)
+            # Creates a list of Monster objects (name, currHealth, powerLevel, experience, gold)
             Monster("Spooky Ghost", random.randint(4, 5), random.randint(3, 4), random.randint(0, 1), random.randint(0, 1)),
             Monster("Scary Ghost", random.randint(5, 6), random.randint(4, 5), random.randint(1, 2), random.randint(1, 2)),
             Monster("Crazy Ghost", random.randint(7, 8), random.randint(5, 6), random.randint(2, 3), 2),
             Monster("Terrifying Ghost", random.randint(8, 12), random.randint(6, 8), random.randint(3, 5), random.randint(2, 3)),
         ]
         junkyardItems = [
-            # Creates an array of Item and HealingItem objects (name, powerLevel/healAmount)
+            # Creates a lsit of Weapon and HealingItem objects (name, powerLevel/healAmount)
             Weapon(random.choice(weaponNames), random.randint(1, 5)),
             Weapon(random.choice(weaponNames), random.randint(1, 5)),
             HealingItem(random.choice(healingItemNames), random.randint(1, 4)),
@@ -502,7 +553,12 @@ def combat_loop(value, hero=Hero, dungeonKing=Monster):
             choice = combat_menu()
             while inCombat:
                 inCombat, inDungeon = combat(choice, junkyardMonsters, totalGold, totalExperience, hero, dungeonKing)
+                if choice == 5:    # Prevents the user from earnling loot after running away.
+                    return
         item_loot(junkyardItems, hero)
+
+    if value == 3:
+        return
 
     if value == 6:
         print("You approach the Dungeon King's lair. Goodluck!\n")
@@ -511,6 +567,7 @@ def combat_loop(value, hero=Hero, dungeonKing=Monster):
         inDungeon = True
         while inDungeon:
             inCombat = True
+            logging.debug("User has entered the dungeon king's lair. Dungeon properties set. Combat begins.")
             choice = combat_menu()
             while inCombat:
                 inCombat, inDungeon = combat(choice, dungeonKingList, totalGold, totalExperience, hero, dungeonKing)
@@ -536,15 +593,16 @@ def party_shop(hero=Hero):
     strongSidekick.print_stats()
     print(f"Cost: {strongSidekick.cost} Gold")
     
-    # Allows the user to choose which sidekick to add to their party
+    # Allows the user to choose which sidekick to add to their party. If member is succesfully added, set purchased to true and exit "shop".
     while purchased == False:
         while True:
             try:
-                choice = int(input("\nWhich would you like to hire?(Enter 1, 2, 3, or 4 to exit the shop.)"))
+                choice = input_val(int(input("\nWhich would you like to hire?(Enter 1, 2, 3, or 4 to exit the shop.)")),5)
             except ValueError:
                 print("Invalid input. Must enter a number between 1 and 4.")
             else:
                 break
+
         if choice == 1:
             purchased = add_party_member(hero, weakSidekick)
         elif choice == 2:
@@ -567,21 +625,27 @@ def add_party_member(hero=Hero, member=Sidekick):
             print("Which member would you like to replace? Please enter the name of the member. Type 'quit' to exit the shop.\n")
             hero.print_party()
             choice = input()
-            if choice == "quit":
-                return False
-            
-            for sidekickName, sidekick in hero.party.items():
-                if choice.lower() == sidekick.name.lower():
-                    looser =sidekick.name
-                    hero.party.pop(choice, None)
-                    hero.party[member.name] = member
-                    hero.inventory['gold'] -= member.cost
-                    print(f"Goodybye {looser}!\nYou have hired {member.name}!")
-                    return True
+            # User has entered the name of the member they want to replace. We check to see if that member is in the party. If true, remove old member and add new.
+            try:
+                if choice == "quit":
+                    return False
+                
+                for sidekickName, sidekick in hero.party.items():
+                    if choice.lower() == sidekick.name.lower():         # IMPORTANT: This ensure that capitalization does not matter. 
+                        looser =sidekick.name
+                        hero.party.pop(choice, None)
+                        hero.party[member.name] = member
+                        hero.inventory['gold'] -= member.cost
+                        print(f"Goodybye {looser}!\nYou have hired {member.name}!")
+                        return True
 
-            if choice not in hero.party:
-                print("That member is not in your party. Check your spelling and try again.")
-                return False
+                if choice not in hero.party:
+                    print("That member is not in your party. Check your spelling and try again.")
+                    return False
+            except TypeError:
+                logging.critical("User has entered an unregognized input.")
+                print("You have entered an unregognized input. Please only use strings.")
+                exit()
     else:
         hero.party[member.name] = member
         hero.partySize += 1
@@ -611,10 +675,16 @@ def adventure_choice(value, hero=Hero, dungeonKing=Monster):
         # Takes user to dungeons
         if value == 4:
             print("What kind of dungeon would you like to explore?(Enter a number)")
-            print("1. Gilded Cave\n2. Haunted Junkyard")
-            dungeonType = int(input())
-            combat_loop(dungeonType, hero, dungeonKing)
-        
+            print("1. Gilded Cave\n2. Haunted Junkyard\n3. Go Back")
+            while True:
+                try:    
+                    dungeonType = input_val(int(input()),4)
+                    combat_loop(dungeonType, hero, dungeonKing)
+                except ValueError:
+                    print("Invalid input. Must enter a number between 1 and 3.")
+                else:
+                    break
+                
         # Level up
         if value == 5:
             hero.level_up()
@@ -630,26 +700,6 @@ def adventure_choice(value, hero=Hero, dungeonKing=Monster):
         # Rules 
         if value == 8:
             print_rules()
-
-def input_val(answer, options = None):
-    if isinstance(answer, str) and options is None:
-        while True:
-            if answer != "y" and answer != "n":
-                print("Invalid input. Please enter 'y' or 'n'.")
-                answer = input()
-            else:
-                return answer
-    elif isinstance(answer, str) and options > 0:
-        while True:
-            print("Invalid input. Please enter a number between 1 and {options}.")
-            answer = int(input())
-    elif isinstance(answer, int) and options > 0:
-        while True:
-            if answer not in range(options) or answer == 0:
-                print(f"Invalid input. Please enter a number between 1 and {options}.")
-                answer = int(input())
-            else:
-                return answer
 
 def print_rules():
     print("\nRULES OF THE GAME:")
@@ -711,30 +761,30 @@ Are you ready to take on the challenge? (y/n)""")
 
 
 dungeonKing = create_DK()
+
 newHero = Hero(print_intro())
+logging.debug(newHero)             #Captures the users Hero Object at start of program.
+
 selectedHero = newHero
 
-#Creates "god" hero for testing.
+#Creates "god" hero object for testing.
 print(f"Would you like to be a god, {newHero.name}? Used for testing. (y/n)")
 god = input_val(input())
 
 if god == "y":
-    godHero = Hero("God", 20, 20, 20)
-    godHero.inventory['gold'] = 1000
-    godHero.inventory['healingItems'].append(HealingItem("Healing potion", 5))
-    godHero.party['Flesh Sheild'] = Sidekick("Flesh Sheild", 3, 3, 3, 3)
-    godHero.experience = 1000
-    selectedHero = godHero
-print("\nI highly recommend reading your user manual(rules of the game) before playing.")
+    selectedHero = create_God()
+    logging.debug(f"User created as a god.{selectedHero}")
 
 
 #Starts the adventure, runs until the dungeon king is dead.
+print("\nI highly recommend reading your user manual(rules of the game) before playing.")
 adventure = True
 while adventure:
     idleChoice = idle_menu()
     adventure_choice(idleChoice, selectedHero, dungeonKing)
     if dungeonKing.is_alive() == False:
         print("You have beaten the dungeon king. Congrats!")
+        logging.debug(f"{dungeonKing.name} has been defeated. Program ended succesfully")
         adventure = False
 
 
